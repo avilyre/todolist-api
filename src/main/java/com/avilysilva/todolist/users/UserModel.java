@@ -1,5 +1,6 @@
 package com.avilysilva.todolist.users;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
@@ -17,9 +18,9 @@ public class UserModel {
     @GeneratedValue(generator = "UUID")
     private UUID id;
 
-    // @Column(name = "<custom-column-name>")
-    private String name;
+    @Column(unique = true)
     private String username;
+    private String name; // @Column(name = "<custom-column-name>")
     private String password;
 
     @CreationTimestamp
