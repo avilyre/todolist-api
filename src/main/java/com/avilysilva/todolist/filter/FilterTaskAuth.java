@@ -1,8 +1,11 @@
 package com.avilysilva.todolist.filter;
 
+import at.favre.lib.crypto.bcrypt.BCrypt;
+import com.avilysilva.todolist.users.IUserRepository;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -12,20 +15,43 @@ import java.util.Base64;
 @Component
 public class FilterTaskAuth extends OncePerRequestFilter {
 
+    @Autowired
+    private IUserRepository userRepository;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        var authorization = request.getHeader("Authorization");
+//
+        var servletPath = request.getServletPath();
 
-        var authEncoded = authorization.substring("Basic".length()).trim();
-        byte[] authDecoded = Base64.getDecoder().decode(authEncoded);
-        var authString = new String(authDecoded);
+        if (servletPath.equals("/tasks/")) {
+            var authorization = request.getHeader("Authorization");
 
-        String[] credentials = authString.split(":");
+            var authEncoded = authorization.substring("Basic".length()).trim();
+            byte[] authDecoded = Base64.getDecoder().decode(authEncoded);
+            var authString = new String(authDecoded);
 
-        String username = credentials[0];
-        String password = credentials[1];
+            String[] credentials = authString.split(":");
 
-        System.out.println(authString);
+            String username = credentials[0];
+            String password = credentials[1];
+
+            var user = userRepository.findByUsername(username);
+
+            if (user == null) {
+                response.sendError(401);
+            } else {
+                var passwordVerify = BCrypt.verifyer().verify(password.toCharArray(), user.getPassword().toCharArray());
+
+                System.out.println(passwordVerify);
+
+                if (passwordVerify.verified) {
+                    filterChain.doFilter(request, response);
+                } else {
+                    response.sendError(401);
+                }
+            }
+            filterChain.doFilter(request, response);
+        }
 
         filterChain.doFilter(request, response);
     }
