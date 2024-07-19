@@ -1,5 +1,6 @@
 package com.avilysilva.todolist.task;
 
+import com.avilysilva.todolist.utilts.Utils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -45,6 +46,19 @@ public class TaskController {
     public List<TaskModel> list(HttpServletRequest request) {
         var idUser = request.getAttribute("idUser");
         return this.taskRepository.findAllByIdUser((UUID) idUser);
+    }
+
+    @PutMapping("/{id}")
+    public TaskModel update(@RequestBody TaskModel taskModel, HttpServletRequest request, @PathVariable UUID id) {
+        var idUser = request.getAttribute("idUser");
+
+        var task = this.taskRepository.findById(id).orElse(null);
+
+        Utils.copyNonNullProperties(taskModel, task);
+
+        taskModel.setId(id);
+        taskModel.setIdUser((UUID) idUser);
+        return this.taskRepository.save(task);
     }
 
 }
